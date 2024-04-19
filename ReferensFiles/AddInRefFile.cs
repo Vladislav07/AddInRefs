@@ -8,6 +8,7 @@ using SolidWorks.Interop.swpublished;
 using SolidWorks.Interop.swconst;
 using SolidWorksTools;
 using System.Runtime.InteropServices;
+using System.Windows.Forms;
 
 namespace ReferensFiles
 {
@@ -22,7 +23,8 @@ namespace ReferensFiles
     public class AddInRefFile: ISwAddin
     {
         ISldWorks iSwApp = null;
-        ModelDoc2 doc = null;
+        ModelDoc2 model = null;
+        PartDoc doc = null;
         int addinID = 0;
         SldWorks SwEventPtr = null;
 
@@ -33,7 +35,9 @@ namespace ReferensFiles
             addinID = Cookie;
             iSwApp.SetAddinCallbackInfo(0, this, addinID);
             SwEventPtr = (SldWorks)iSwApp;
-            doc = (SolidWorks.Interop.sldworks.ModelDoc2)iSwApp.ActiveDoc;
+            model = (ModelDoc2)iSwApp.ActiveDoc;
+            doc = model as PartDoc;
+            AttachSwEvents();
             return true;
         }
 
@@ -48,7 +52,7 @@ namespace ReferensFiles
 
             GC.Collect();
             GC.WaitForPendingFinalizers();
-
+            DetachSwEvents();
             return true;
 
         }
@@ -136,19 +140,35 @@ namespace ReferensFiles
             
             try
             {
-               
-                
+                doc.FileSaveAsNotify2 +=Doc_FileSaveAsNotify2;
                 return true;
             }
             catch (Exception e)
             {
-
                 Console.WriteLine(e.Message);
                 return false;
-
+            }
+        }
+        private bool DetachSwEvents()
+        {
+            try
+            {
+                doc.FileSaveAsNotify2 -= Doc_FileSaveAsNotify2;
+                return true;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+                return false;
             }
         }
 
 
+
+            private int Doc_FileSaveAsNotify2(string FileName)
+            {
+            MessageBox.Show(FileName);
+            return 1;
+            }
     }
 }
